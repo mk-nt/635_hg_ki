@@ -15,8 +15,8 @@ moves = VectorMoves()
 
 # Uniform prior on tree topologies
 topology ~ dnUniformTopology(taxa, outgroup = outgroup)
-moves.append( mvNNI(topology, weight = nEdge / 10.0) )
-moves.append( mvSPR(topology, weight = nEdge / 50.0) )
+moves.append( mvNNI(topology, weight = nEdge / 8.0) )
+moves.append( mvSPR(topology, weight = nEdge / 30.0) )
 
 
 # Compound dirichlet prior on edge length variability
@@ -27,7 +27,7 @@ moves.append( mvSPR(topology, weight = nEdge / 50.0) )
 gamma_shape <- 2
 exp_steps <- 1 # Expected changes per site across the tree.
 tree_length ~ dnGamma(shape = gamma_shape, rate = gamma_shape / exp_steps)
-moves.append( mvScale(tree_length, weight = 1.0) )
+moves.append( mvSlice(tree_length, weight = 1.0) )
 
 rel_br_lengths ~ dnDirichlet( rep(1.0, nEdge) )
 moves.append( mvBetaSimplex(rel_br_lengths, weight = nEdge / 5.0) )
@@ -39,7 +39,7 @@ phylogeny := treeAssembly(topology, br_lengths)
 
 # Log-normal distributed rate variation (Wagner 2012, doi: 10.1098/rsbl.2011.0523)
 rate_log_sd ~ dnGamma( 1, 1 )
-moves.append( mvScale(rate_log_sd, lambda=1, weight = 1.0) )
+moves.append( mvSlice(rate_log_sd, lambda=1, weight = 1.0) )
 
 # Mean = 1, so that tree length ~ character changes
 # 6 categories (see Wright & Wynd 2024,
@@ -49,7 +49,7 @@ rate_categories := fnDiscretizeDistribution( dnLognormal( 0, rate_log_sd ), 6)
 
 # Modelled on https://revbayes.github.io/tutorials/morph_tree/V2#subsubsec_relaxing
 beta_scale ~ dnLognormal(0, sd = 2 * 0.587405)
-moves.append( mvScale(beta_scale, lambda = 1, weight = 5.0 ) )
+moves.append( mvSlice(beta_scale, lambda = 1, weight = 2.0 ) )
 
 n_beta_categories = 4
 beta_categories := fnDiscretizeBeta(beta_scale, beta_scale, n_beta_categories)
@@ -59,8 +59,8 @@ for (i in 1:n_beta_categories) {
 }
 
 matrix_probs ~ dnDirichlet( rep(1, n_beta_categories) )
-moves.append( mvBetaSimplex( matrix_probs, weight = 3.0 ) )
-moves.append( mvDirichletSimplex ( matrix_probs, weight = 1.5 ) )
+moves.append( mvBetaSimplex( matrix_probs, weight = 1.0 ) )
+moves.append( mvDirichletSimplex ( matrix_probs, weight = 0.5 ) )
 
 
 m_morph[1] ~ dnPhyloCTMC(
